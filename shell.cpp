@@ -3,8 +3,11 @@
 #include <sstream>
 #include <unistd.h>
 #include <pwd.h>
-#include <sys/utsname.h>
+#include <sys/types.h>
+#include <sys/wait.h>
 #include <vector>
+#include <cstring>
+
 // Colores para probar con prompt, excepciones, mensajes, etc
 #define RESET   "\033[0m"
 #define BLACK   "\033[30m"      /* Black */
@@ -32,10 +35,9 @@ int main(){
 
     while(true){
         struct passwd* pw = getpwuid(getuid());
-        std::string username = pw->pw_name;
         //pw_dir, entrega el directorio home del usuario
-        std::string dir = pw->pw_dir;
-        std::string command, command_index, word;
+        std::string username = pw->pw_name, dir = pw->pw_dir, command, word;
+        int command_index, parse_command_size;
         char hostname[1024];
         gethostname(hostname, sizeof(hostname));
         std::cout <<  GREEN << username << "@" << hostname << ":" << dir << "$ " << RESET;
@@ -48,32 +50,45 @@ int main(){
         while(iss >> word){
             parse_command.push_back(word);
         }
+        parse_command_size = parse_command.size();
 
         if(parse_command.empty()) continue;
         
         //Verifica que el comando exista
-        bool isCorrect = false;
-        for( int i=0 ; i < num_commands ; i++){
-            if(parse_command[0] == commands[i]) {
-                command_index = i;
-                isCorrect = true;
-            }   
-        }
+        // bool isCorrect = false;
+        // for( int i=0 ; i < num_commands ; i++){
+        //     if(parse_command[0] == commands[i]) {
+        //         command_index = i;
+        //         isCorrect = true;
+        //     }   
+        // }
 
-        //Si el comando no existe devuelve un mensaje de error por la terminal
-        if(!isCorrect) {
-            command = "";
-            int parse_command_size = parse_command.size();
-            for(int i = 0 ; i < parse_command_size ; i++){
-                if(i!=parse_command_size-1){
-                    command += parse_command[i] + " ";
-                }else{
-                    command += parse_command[i];
-                }
+        // //Si el comando no existe devuelve un mensaje de error por la terminal
+        // if(!isCorrect) {
+        //     command = "";
+        //     for(int i = 0 ; i < parse_command_size ; i++){
+        //         if(i!=parse_command_size-1){
+        //             command += parse_command[i] + " ";
+        //         }else{
+        //             command += parse_command[i];
+        //         }
                 
+        //     }
+        //     std::cerr << command << ":" << "no se encontró la orden" << std::endl;
+        //     continue;
+        // }
+
+        //Ejecuta el comando ingresado mediante 'execvp'
+        char* myargs[parse_command_size + 1];
+        pid_t cmd_pid = fork();
+        if(cmd_pid == 0){
+            for(int i=0 ; i<parse_command_size ; i++){
+                myargs[i] = strdup(parse_command[i].c_str());
             }
-            std::cerr << command << ":" << "no se encontró la orden" << std::endl;
-            continue;
+            myargs[parse_command_size] = NULL;
+            execvp(myargs[0], myargs);
+        }else{
+            wait(NULL);
         }
 
         if(parse_command[0] == "exit"){
