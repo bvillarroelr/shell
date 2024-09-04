@@ -1,8 +1,10 @@
 #include <iostream>
 #include <string>
+#include <sstream>
 #include <unistd.h>
 #include <pwd.h>
 #include <sys/utsname.h>
+#include <vector>
 // Colores para probar con prompt, excepciones, mensajes, etc
 #define RESET   "\033[0m"
 #define BLACK   "\033[30m"      /* Black */
@@ -22,8 +24,9 @@
 #define BOLDCYAN    "\033[1m\033[36m"      /* Bold Cyan */
 #define BOLDWHITE   "\033[1m\033[37m"      /* Bold White */
 
-const int num_commands = 3;
-const std::string commands[num_commands] = {"ls", "cd", "wc"};
+const int num_commands = 4;
+const std::string commands[num_commands] = {"ls", "cd", "wc", "exit"};
+const std::string commands_args[num_commands] = {{}, {}, {}, {}};
 
 int main(){
 
@@ -32,35 +35,53 @@ int main(){
         std::string username = pw->pw_name;
         //pw_dir, entrega el directorio home del usuario
         std::string dir = pw->pw_dir;
-        std::string command;
+        std::string command, command_index, word;
         char hostname[1024];
         gethostname(hostname, sizeof(hostname));
         std::cout <<  GREEN << username << "@" << hostname << ":" << dir << "$ " << RESET;
         std::getline(std::cin, command);
 
-        int command_large = command.size();
-        for(int i=0 ; i < command_large ; i++){
-            if(!isspace(command[i])){
-                command = command.substr(i);
-                break;
-            }else if(i == command_large - 1){
-                command.clear();
-            }
+        //Parsea el comando ingresado y lo divide en el comando como tal y sus argumentos
+        std::istringstream iss(command);
+        std::vector<std::string> parse_command;
+
+        while(iss >> word){
+            parse_command.push_back(word);
         }
 
-        if(command == "") continue;
-
+        if(parse_command.empty()) continue;
+        
+        //Verifica que el comando exista
         bool isCorrect = false;
         for( int i=0 ; i < num_commands ; i++){
-            if(command == commands[i]) {
+            if(parse_command[0] == commands[i]) {
+                command_index = i;
                 isCorrect = true;
             }   
         }
 
+        //Si el comando no existe devuelve un mensaje de error por la terminal
         if(!isCorrect) {
+            command = "";
+            int parse_command_size = parse_command.size();
+            for(int i = 0 ; i < parse_command_size ; i++){
+                if(i!=parse_command_size-1){
+                    command += parse_command[i] + " ";
+                }else{
+                    command += parse_command[i];
+                }
+                
+            }
             std::cerr << command << ":" << "no se encontró la orden" << std::endl;
             continue;
+        }
+
+        if(parse_command[0] == "exit"){
+            exit(0);
+        }else if(parse_command[0] == "ls"){
+
         }
     }
 
 }
+
