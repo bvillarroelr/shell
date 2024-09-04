@@ -17,7 +17,7 @@ int main(){
         std::string command;
         char hostname[1024];
         gethostname(hostname, sizeof(hostname));
-        std::cout << username << "@" << hostname << ":" << dir << "$ ";
+        std::cout << username << "@" << hostname << ":shell_SO" << dir << "$ ";
         std::getline(std::cin, command);
 
         int command_large = command.size();
