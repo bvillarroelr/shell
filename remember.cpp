@@ -12,6 +12,8 @@
 const int n_cmd = 3;
 const std::string cmds[n_cmd] = {"set", "recordatrio", "Tarea"};
 const std::string cmds_args[n_cmd] = {{},{},{}};
+void 
+
 int main(){
         
 }
