@@ -27,17 +27,10 @@
 #define BOLDCYAN    "\033[1m\033[36m"      /* Bold Cyan */
 #define BOLDWHITE   "\033[1m\033[37m"      /* Bold White */
 
-const int num_commands = 4;
-const std::string commands[num_commands] = {"ls", "cd", "wc", "exit"};
-const std::string commands_args[num_commands] = {{}, {}, {}, {}};
-
-void exec_cd( char* arg) {
+void exec_cd(char* arg) {
     // hay que usar la funcion de c chdir(), que hace exactamente lo que hace cd. Retorna 0 si se hizo bien y -1 si hubo un error
     if (chdir(arg) != 0) {
         perror("chdir failed");
-    }
-    else {
-        chdir(arg);
     }
 }
 
@@ -46,11 +39,12 @@ int main(){
     while(true){
         struct passwd* pw = getpwuid(getuid());
         //pw_dir, entrega el directorio home del usuario
-        std::string username = pw->pw_name, dir = pw->pw_dir, command, word;
-        int command_index, parse_command_size;
-        char hostname[1024];
+        std::string username = pw->pw_name, command, word;
+        int parse_command_size;
+        char hostname[1024],cwd[1024];
+        getcwd(cwd, sizeof(cwd));
         gethostname(hostname, sizeof(hostname));
-        std::cout <<  GREEN << username << "@" << hostname << ":" << dir << "$ " << RESET;
+        std::cout <<  GREEN << username << "@" << hostname << ":" << cwd << "$ " << RESET;
         std::getline(std::cin, command);
 
         //Parsea el comando ingresado y lo divide en el comando como tal y sus argumentos
@@ -63,30 +57,10 @@ int main(){
         parse_command_size = parse_command.size();
 
         if(parse_command.empty()) continue;
-        
-        //Verifica que el comando exista
-        // bool isCorrect = false;
-        // for( int i=0 ; i < num_commands ; i++){
-        //     if(parse_command[0] == commands[i]) {
-        //         command_index = i;
-        //         isCorrect = true;
-        //     }   
-        // }
 
-        // //Si el comando no existe devuelve un mensaje de error por la terminal
-        // if(!isCorrect) {
-        //     command = "";
-        //     for(int i = 0 ; i < parse_command_size ; i++){
-        //         if(i!=parse_command_size-1){
-        //             command += parse_command[i] + " ";
-        //         }else{
-        //             command += parse_command[i];
-        //         }
-                
-        //     }
-        //     std::cerr << command << ":" << "no se encontró la orden" << std::endl;
-        //     continue;
-        // }
+        if(parse_command[0] == "exit"){
+            break;
+        }
 
         //Ejecuta el comando ingresado mediante 'execvp'
         char* myargs[parse_command_size + 1];
@@ -96,23 +70,29 @@ int main(){
                 myargs[i] = strdup(parse_command[i].c_str());   // convierte caracter por caracter un string de c++ a un string de c??
             }
             myargs[parse_command_size] = NULL;
-            execvp(myargs[0], myargs);
+            if(parse_command[0] == "cd"){
+            }else{
+                if(execvp(myargs[0], myargs) == -1){
+                command = "";
+                for(int i = 0 ; i < parse_command_size ; i++){
+                    if(i!=parse_command_size-1){
+                        command += parse_command[i] + " ";
+                    }else{
+                        command += parse_command[i];
+                    }
+                }
+                std::cerr << command << ":" << "no se encontró la orden" << std::endl;
+                exit(4);
+                }
+
+            }
+            
         }else{
-            wait(NULL);
+            int status;
+            if(parse_command[0] == "cd"){
+                exec_cd(strdup(parse_command[1].c_str()));
+            }
+            waitpid(cmd_pid, &status, 0);
         }
-
-        if(parse_command[0] == "exit"){
-            exit(0);
-        }else if(parse_command[0] == commands[1]){ // commands [1] == "cd"
-            // exec_cd() // hay que pasarle como parámetro el argumento del cd: cd .. por ejemplo, pero aun no se donde se almacenan
-        }
-
-        
-   /*     else if(parse_command[0] == "ls"){
-
-        }
-    */
     }
-
 }
-
