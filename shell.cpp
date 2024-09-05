@@ -32,7 +32,6 @@ void exec_cd(char* arg) {
     if (chdir(arg) != 0) {
         perror("chdir failed");
     }
-    //exit(0);
 }
 
 void execute_command(const std::vector<std::string>& parse_command) {
@@ -73,54 +72,77 @@ int main(){
         parse_command_size = parse_command.size();
 
         if(parse_command.empty()) continue;
+        if(parse_command[0] == "exit") break;
 
-        if(parse_command[0] == "exit"){
-            break;
-        }
-
-        /* implementación del pipe
-        bool has_pipe = false;
-        std::vector<std::string> left_command, right_command;
+        if (parse_command[0] == "cd") {
+            if (parse_command.size() > 1) {
+                exec_cd(strdup(parse_command[1].c_str()));
+            } else {
+                std::cerr << "cd: falta argumento" << std::endl;
+            }
+            continue; // Continuar para evitar crear un proceso hijo
+        }        
         
+        // Detectar comandos con pipes
+        std::vector<std::vector<std::string>> pipe_segments;
+        std::vector<std::string> current_segment;
+
         for (int i = 0; i < parse_command.size(); i++) {
             if (parse_command[i] == "|") {
-                has_pipe = true;
-                // captura los elementos de parse_command de izquierda a derecha, considerando la posición en donde se detecta el pipe "|"
-                left_command = std::vector<std::string>(parse_command.begin(), parse_command.begin() + i);
-                right_command = std::vector<std::string>(parse_command.begin() + i + 1, parse_command.end());
-                break;
+                pipe_segments.push_back(current_segment);
+                current_segment.clear();
+            } else {
+                current_segment.push_back(parse_command[i]);
             }
         }
-        */
+        pipe_segments.push_back(current_segment); // Agregar el último segmento de comando
 
-        //Ejecuta el comando ingresado mediante 'execvp'
-        char* myargs[parse_command_size + 1];
-        pid_t cmd_pid = fork();
-        if(cmd_pid == 0){
-            for(int i=0 ; i<parse_command_size ; i++){
-                myargs[i] = strdup(parse_command[i].c_str());   // convierte strings de c++ a strings de c (char*)  
+        int num_pipes = pipe_segments.size() - 1;
+        int pipefds[2 * num_pipes];  // Crear el número necesario de pipes
+
+        // Crear los pipes
+        for (int i = 0; i < num_pipes; i++) {
+            if (pipe(pipefds + i * 2) == -1) {
+                perror("pipe failed");
+                return 1;
             }
-            myargs[parse_command_size] = NULL;
-            if(parse_command[0] == "cd"){
-                exec_cd(strdup(parse_command[1].c_str()));
-            }else{
-                if(execvp(myargs[0], myargs) == -1){
-                command = "";
-                for(int i = 0 ; i < parse_command_size ; i++){
-                    if(i!=parse_command_size-1){
-                        command += parse_command[i] + " ";
-                    }else{
-                        command += parse_command[i];
+        }
+
+        // Crear los procesos para cada segmento de comando
+        for (int i = 0; i < pipe_segments.size(); i++) {
+            pid_t pid = fork();
+            if (pid == 0) {
+                // Si no es el primer segmento, redirigir stdin al pipe de lectura
+                if (i > 0) {
+                    if (dup2(pipefds[(i - 1) * 2], STDIN_FILENO) == -1) {
+                        perror("dup2 failed");
+                        exit(1);
                     }
                 }
-                std::cerr << command << ":" << "no se encontró la orden" << std::endl;
-                exit(4);
+                // Si no es el último segmento, redirigir stdout al pipe de escritura
+                if (i < num_pipes) {
+                    if (dup2(pipefds[i * 2 + 1], STDOUT_FILENO) == -1) {
+                        perror("dup2 failed");
+                        exit(1);
+                    }
                 }
+                // Cerrar todos los pipes
+                for (int j = 0; j < 2 * num_pipes; j++) {
+                    close(pipefds[j]);
+                }
+                // Ejecutar el segmento de comando
+                execute_command(pipe_segments[i]);
             }
-            
-        }else{
-            int status; // <- para que sirve?
-            waitpid(cmd_pid, &status, 0);
+        }
+
+        // Cerrar todos los pipes en el proceso padre
+        for (int i = 0; i < 2 * num_pipes; i++) {
+            close(pipefds[i]);
+        }
+
+        // Esperar a que todos los hijos terminen
+        for (int i = 0; i < pipe_segments.size(); i++) {
+            wait(NULL);
         }
     }
 }
