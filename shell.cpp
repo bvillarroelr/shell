@@ -61,6 +61,10 @@ int main(){
         if(parse_command[0] == "exit"){
             break;
         }
+        // print de prueba del vector
+        for(int i = 0; i<parse_command.size(); i++) {
+            std::cout << parse_command[i] << std::endl;
+        }
 
         //Ejecuta el comando ingresado mediante 'execvp'
         char* myargs[parse_command_size + 1];
@@ -71,6 +75,7 @@ int main(){
             }
             myargs[parse_command_size] = NULL;
             if(parse_command[0] == "cd"){
+                exec_cd(strdup(parse_command[1].c_str()));
             }else{
                 if(execvp(myargs[0], myargs) == -1){
                 command = "";
@@ -89,9 +94,6 @@ int main(){
             
         }else{
             int status;
-            if(parse_command[0] == "cd"){
-                exec_cd(strdup(parse_command[1].c_str()));
-            }
             waitpid(cmd_pid, &status, 0);
         }
     }
