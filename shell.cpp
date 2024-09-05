@@ -31,6 +31,16 @@ const int num_commands = 4;
 const std::string commands[num_commands] = {"ls", "cd", "wc", "exit"};
 const std::string commands_args[num_commands] = {{}, {}, {}, {}};
 
+void exec_cd( char* arg) {
+    // hay que usar la funcion de c chdir(), que hace exactamente lo que hace cd. Retorna 0 si se hizo bien y -1 si hubo un error
+    if (chdir(arg) != 0) {
+        perror("chdir failed");
+    }
+    else {
+        chdir(arg);
+    }
+}
+
 int main(){
 
     while(true){
@@ -83,7 +93,7 @@ int main(){
         pid_t cmd_pid = fork();
         if(cmd_pid == 0){
             for(int i=0 ; i<parse_command_size ; i++){
-                myargs[i] = strdup(parse_command[i].c_str());
+                myargs[i] = strdup(parse_command[i].c_str());   // convierte caracter por caracter un string de c++ a un string de c??
             }
             myargs[parse_command_size] = NULL;
             execvp(myargs[0], myargs);
@@ -93,9 +103,15 @@ int main(){
 
         if(parse_command[0] == "exit"){
             exit(0);
-        }else if(parse_command[0] == "ls"){
+        }else if(parse_command[0] == commands[1]){ // commands [1] == "cd"
+            // exec_cd() // hay que pasarle como parámetro el argumento del cd: cd .. por ejemplo, pero aun no se donde se almacenan
+        }
+
+        
+   /*     else if(parse_command[0] == "ls"){
 
         }
+    */
     }
 
 }
