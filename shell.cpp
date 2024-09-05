@@ -32,6 +32,22 @@ void exec_cd(char* arg) {
     if (chdir(arg) != 0) {
         perror("chdir failed");
     }
+    //exit(0);
+}
+
+void execute_command(const std::vector<std::string>& parse_command) {
+    int parse_command_size = parse_command.size();
+    char* myargs[parse_command_size + 1];
+    
+    for(int i = 0 ; i < parse_command_size ; i++) {
+        myargs[i] = strdup(parse_command[i].c_str());
+    }
+    myargs[parse_command_size] = NULL;
+    
+    if (execvp(myargs[0], myargs) == -1) {
+        std::cerr << parse_command[0] << ": no se encontró la orden" << std::endl;
+        exit(4);
+    }
 }
 
 int main(){
@@ -61,17 +77,28 @@ int main(){
         if(parse_command[0] == "exit"){
             break;
         }
-        // print de prueba del vector
-        for(int i = 0; i<parse_command.size(); i++) {
-            std::cout << parse_command[i] << std::endl;
+
+        /* implementación del pipe
+        bool has_pipe = false;
+        std::vector<std::string> left_command, right_command;
+        
+        for (int i = 0; i < parse_command.size(); i++) {
+            if (parse_command[i] == "|") {
+                has_pipe = true;
+                // captura los elementos de parse_command de izquierda a derecha, considerando la posición en donde se detecta el pipe "|"
+                left_command = std::vector<std::string>(parse_command.begin(), parse_command.begin() + i);
+                right_command = std::vector<std::string>(parse_command.begin() + i + 1, parse_command.end());
+                break;
+            }
         }
+        */
 
         //Ejecuta el comando ingresado mediante 'execvp'
         char* myargs[parse_command_size + 1];
         pid_t cmd_pid = fork();
         if(cmd_pid == 0){
             for(int i=0 ; i<parse_command_size ; i++){
-                myargs[i] = strdup(parse_command[i].c_str());   // convierte caracter por caracter un string de c++ a un string de c??
+                myargs[i] = strdup(parse_command[i].c_str());   // convierte strings de c++ a strings de c (char*)  
             }
             myargs[parse_command_size] = NULL;
             if(parse_command[0] == "cd"){
@@ -89,11 +116,10 @@ int main(){
                 std::cerr << command << ":" << "no se encontró la orden" << std::endl;
                 exit(4);
                 }
-
             }
             
         }else{
-            int status;
+            int status; // <- para que sirve?
             waitpid(cmd_pid, &status, 0);
         }
     }
