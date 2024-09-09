@@ -8,6 +8,7 @@
 #include <vector>
 #include <cstring>
 #include <cstdlib>
+#include "favs.h"
 
 // Colores para probar con prompt, excepciones, mensajes, etc
 #define RESET   "\033[0m"
