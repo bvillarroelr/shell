@@ -15,6 +15,8 @@ void favs_buscar(char *cmd);
 void favs_borrar();
 void favs_ejecutar(int num);
 void favs_cargar();
+void favs_cargar(char* path);
 void favs_guardar();
+void favs_guardar(char* path);
 void add_favorite(char *cmd);
 #endif

@@ -1,3 +1,4 @@
+#include <iostream>
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
@@ -9,7 +10,7 @@
 
 
 
-Favorite favorites[MAX_CMD_LENGTH];
+Favorite favorites[MAX_FAVS];
 int fav_count = 0;
 char fav_file[256] = "";
 
@@ -27,6 +28,9 @@ void favs_create(char *path){
 }
 // favs mostar
 void show_favs(){
+    if(fav_count == 0){
+        std::cout << "Error: No hay favoritos guardados" << std::endl;
+    }
     for(int i = 0; i < fav_count; i++){
         printf("%d: %s\n", favorites[i].id, favorites[i].cmd);
     }
@@ -82,11 +86,50 @@ void favs_cargar() {
         fav_count++;
     }
     fclose(file);
-    show_favs();
+    if(fav_count == 0){
+        std::cout << "Archivo sin favoritos guardados abierto." << std::endl;
+    }else{
+        std::cout << fav_count << std::endl;
+        show_favs();
+    }
+}
+
+void favs_cargar(char* path) {
+    strcpy(fav_file, path);
+    FILE *file = fopen(path, "r");
+    if (file == NULL) {
+        printf("Error al abrir el archivo de favoritos.\n");
+        return;
+    }
+    fav_count = 0;
+    while (fscanf(file, "%d %[^\n]", &favorites[fav_count].id, favorites[fav_count].cmd) == 2) {
+        fav_count++;
+    }
+    fclose(file);
+    if(fav_count == 0){
+        std::cout << "Archivo sin favoritos guardados abierto." << std::endl;
+    }else{
+        std::cout << fav_count << std::endl;
+        show_favs();
+    }
 }
 
 void favs_guardar() {
     FILE *file = fopen(fav_file, "w");
+    if (file == NULL) {
+        printf("Error al abrir el archivo de favoritos.\n");
+        return;
+    }
+    for (int i = 0; i < fav_count; i++) {
+        fprintf(file, "%d %s\n", favorites[i].id, favorites[i].cmd);
+    }
+    fclose(file);
+    printf("Favoritos guardados en %s\n", fav_file);
+}
+
+void favs_guardar(char* path) {
+    strcpy(fav_file, path);
+    FILE *file = fopen(path, "w");
     if (file == NULL) {
         printf("Error al abrir el archivo de favoritos.\n");
         return;
