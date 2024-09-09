@@ -44,6 +44,7 @@ void favs_eliminar(char *nums) {
             if (favorites[i].id == num) {
                 for (int j = i; j < fav_count - 1; j++) {
                     favorites[j] = favorites[j + 1];
+                    favorites[j].id = favorites[j].id -1;
                 }
                 fav_count--;
                 break;

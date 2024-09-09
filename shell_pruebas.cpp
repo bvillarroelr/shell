@@ -8,6 +8,7 @@
 #include <vector>
 #include <cstring>
 #include <cstdlib>
+#include <algorithm>
 #include "favs.h"
 
 // Colores para probar con prompt, excepciones, mensajes, etc
@@ -64,97 +65,97 @@ void execute_favs(const std::vector<std::string>& parse_command){
     if (parse_command[1]=="crear"){
         if(parse_command.size() < 3){
             std::cerr << "Error: Faltan argumentos. Debe usar: favs crear <ruta/nombre_archivo.txt>" << std::endl;
-            exit(1);
+            return;
         }else if(parse_command.size() > 3){
             std::cerr << "Error: Demasiados argumentos. Debe usar: favs crear <ruta/nombre_archivo.txt>" << std::endl;
-            exit(1);
+            return;
         }else{
             favs_create(strdup(parse_command[2].c_str()));// pasar el path
-            exit(0);
+            return;
         } 
 
     }else if (parse_command[1]=="mostrar"){
         if(parse_command_size > 2){
             std::cerr << "Error: Demasiados argumentos. Debe usar: favs mostrar" << std::endl;
-            exit(1);
+            return;
         }else{
             show_favs(); //mostrar favs
-            exit(0);
+            return;
         }
         
 
     }else if (parse_command[1]=="eliminar"){
         if (parse_command_size < 3){
             std::cerr << "Error: Faltan argumentos. Debe usar: favs eliminar <num1,num2,...,numN>" << std::endl;
-            exit(1);
+            return;
         }else if(parse_command_size > 3){
             std::cerr << "Error: Demasiados argumentos. Debe usar: favs eliminar <num1,num2,...,numN>" << std::endl;
-            exit(1);
+            return;
 
         }else{
             favs_eliminar(strdup(parse_command[2].c_str())); //Transformar string a char*
-            exit(0);
+            return;
         }
     
     }else if (parse_command[1]=="buscar"){
         if (parse_command_size < 3){
             std::cerr << "Error: Faltan argumentos. Debe usar: favs buscar <criterio>" << std::endl;
-            exit(1);
+            return;
         }else if(parse_command_size > 3){
             std::cerr << "Error: Demasiados argumentos. Debe usar: favs buscar <criterio>" << std::endl;
-            exit(1);
+            return;
         }else{
             favs_buscar(strdup(parse_command[2].c_str()));    
-            exit(0);
+            return;
         }
 
     }else if (parse_command[1]=="ejecutar"){
         if (parse_command_size < 3){
             std::cerr << "Error: Faltan argumentos. Debe usar: favs ejecutar  <num>" << std::endl;
-            exit(1);
+            return;
         }else if(parse_command_size > 3){
             std::cerr << "Error: Demasiados argumentos. Debe usar: favs ejecutar  <num>" << std::endl;
-            exit(1);
+            return;
         }
         else{
             favs_ejecutar(std::stoi(parse_command[2]));
-            exit(0);
+            return;
         }
     }else if (parse_command[1] == "cargar"){
         if(parse_command_size == 2){
             favs_cargar();
-            exit(0);
+            return;
         } else if(parse_command_size == 3){
             favs_cargar(strdup(parse_command[2].c_str()));
-            exit(0);
+            return;
         } else{
             std::cerr << "Error: Demasiados argumentos. Debe usar: favs cargar <ruta/nombre_archivo.txt> o favs cargar" << std::endl;
-            exit(1);
+            return;
         }
     } else if(parse_command[1] == "guardar"){
         if(parse_command_size == 2){
             favs_guardar();
-            exit(0);
+            return;
         } else if(parse_command_size == 3){
             favs_guardar(strdup(parse_command[2].c_str()));
-            exit(0);
+            return;
         } else{
             std::cerr << "Error: Demasiados argumentos. Debe usar: favs guardar <ruta/nombre_archivo.txt> o favs guardar" << std::endl;
-            exit(1);
+            return;
         }
 
     } else if(parse_command[1] == "borrar"){
         if(parse_command_size > 2){
             std::cerr << "Error: Demasiados argumentos. Debe usar: favs borrar" << std::endl;
-            exit(1);
+            return;
         } else{
             favs_borrar();
-            exit(0);
+            return;
         }
 
     } else{
         std::cerr << "Error: El Comando 'favs " << parse_command[1] << "' no se reconoce." << std::endl;
-        exit(1);
+        return;
     }    
 }
 
@@ -209,10 +210,9 @@ int main(){
                     if(parse_command.size() < 4){
                         std::cerr << "Error: Faltan argumentos. Debe usar: set remember <segundos> <'mensaje'>" << std::endl;
                         exit(1);
-                    } else if(parse_command.size() > 4){
-                        std::cerr << "Error: Demasiados argumentos. Debe usar: set remember <segundos> <'mensaje'>" << std::endl;
-                        exit(1);
-                    } else{
+                    } else if(!std::all_of(parse_command[2].begin(), parse_command[2].end(), ::isdigit)){
+                        std::cerr << "Error: <segundos> debe ser un numero real. Debe usar: set remember <segundos> <'mensaje'>" << std::endl;
+                    }else{
                         set_remember( std::stoi(parse_command[2]), parse_command );
                         add_favorite(strdup(command.c_str()));
                         exit(0);
@@ -261,7 +261,7 @@ int main(){
         for (int i = 0; i < num_pipes; i++) {
             if (pipe(pipefds + i * 2) == -1) {
                 perror("pipe failed");
-                return 1;
+                continue;
             }
         }
 
@@ -290,7 +290,10 @@ int main(){
                 // Ejecutar el segmento de comando
                 if(pipe_segments[i][0] != "favs"){
                     execute_command(pipe_segments[i]);
+                } else {
+                    exit(0); 
                 }
+                
             } if (pid < 0) {
                 perror("fork failed");
             } else {
@@ -307,8 +310,7 @@ int main(){
                             add_favorite(strdup(command.c_str()));
                         }
                     }
-                }
-                
+                } 
             }
         }
 
