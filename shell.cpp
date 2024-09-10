@@ -76,24 +76,6 @@ void execute_command(const std::vector<std::string>& parse_command) {
     
 }
 
-void execute_command_onFather(const std::vector<std::string>& parse_command) {
-    int parse_command_size = parse_command.size();
-    
-    char* myargs[parse_command_size + 1];
-
-    for(int i = 0 ; i < parse_command_size ; i++) {
-        myargs[i] = strdup(parse_command[i].c_str());
-    }
-    myargs[parse_command_size] = NULL;
-    if (execvp(myargs[0], myargs) == -1) {
-        std::cerr << parse_command[0] << ": no se encontró la orden" << std::endl;
-        return;
-    }   
-    return;
-    
-}
-
-
 void execute_favs(const std::vector<std::string>& parse_command){
     int parse_command_size = parse_command.size();
     
@@ -173,7 +155,6 @@ void execute_favs(const std::vector<std::string>& parse_command){
                 pid_t pid = fork();
                 if(pid < 0){
                     std::cerr << "Error al crear el proceso hijo\n";
-                    return;
                 } else if(pid == 0){
                     execute_command(fav_cmd);
                 } else{
@@ -304,9 +285,9 @@ int main(){
         int num_pipes = pipe_segments.size() - 1;
         int pipefds[2 * num_pipes];  // Crear el número necesario de pipes
 
-        // Crear los pipes
-        for (int i = 0; i < num_pipes; i++) {
-            if (pipe(pipefds + i * 2) == -1) {
+        // Crear pipes
+        for(int i = 0 ; i < num_pipes; i++){
+            if(pipe(pipefds + i * 2) == -1){
                 perror("pipe failed");
                 continue;
             }
@@ -316,59 +297,55 @@ int main(){
         for (int i = 0; i < pipe_segments.size(); i++) {
             pid_t pid = fork();
             if (pid == 0) {
+                // Cerrar todos los pipes que no se utilizan en el proceso hijo
+                for (int j = 0; j < 2 * num_pipes; j++) {
+                    if(j != ((i - 1) *2) && j!=((i * 2) + 1)){
+                        close(pipefds[j]);
+                    }
+                }
+                
                 // Si no es el primer segmento, redirigir stdin al pipe de lectura
                 if (i > 0) {
-                    if (dup2(pipefds[(i - 1) * 2], STDIN_FILENO) == -1) {
+                    if(dup2(pipefds[(i - 1) * 2], STDIN_FILENO) == -1){
                         perror("dup2 failed");
                         exit(1);
                     }
+                    close(pipefds[(i - 1) * 2]);
+                    
                 }
                 // Si no es el último segmento, redirigir stdout al pipe de escritura
                 if (i < num_pipes) {
-                    if (dup2(pipefds[i * 2 + 1], STDOUT_FILENO) == -1) {
+                    if (dup2(pipefds[(i * 2) + 1], STDOUT_FILENO) == -1) {
                         perror("dup2 failed");
                         exit(1);
                     }
+                    close(pipefds[(i * 2) + 1]);
                 }
-                // Cerrar todos los pipes
-                for (int j = 0; j < 2 * num_pipes; j++) {
-                    close(pipefds[j]);
-                }
+                
                 // Ejecutar el segmento de comando
                 if(pipe_segments[i][0] != "favs"){
                     execute_command(pipe_segments[i]);
-                } else {
-                    exit(0); 
                 }
-                
+                exit(0); 
             } if (pid < 0) {
                 perror("fork failed");
-            } else {
-                if(pipe_segments[i][0] == "favs"){
-                    execute_favs(pipe_segments[i]);
-                }
-                int status;
-                pid_t pid = wait(&status);
-                if(pid == -1){
-                    perror("wait failed");
-                } else{
-                    if(WIFEXITED(status)){
-                        if(WEXITSTATUS(status) != 1 && parse_command[0] != "favs"){
-                            add_favorite(strdup(command.c_str()));
-                        }
-                    }
-                } 
-            }
+            } 
         }
-
-        // Cerrar todos los pipes en el proceso padre
         for (int i = 0; i < 2 * num_pipes; i++) {
             close(pipefds[i]);
         }
 
         // Esperar a que todos los hijos terminen
         for (int i = 0; i < pipe_segments.size(); i++) {
-            wait(NULL);
+            int status;
+            wait(&status);
+            if(WEXITSTATUS(status) != 1 && parse_command[0] != "favs"){
+                add_favorite(strdup(command.c_str()));
+            }
+        }
+
+        if(parse_command[0] == "favs"){
+            execute_favs(parse_command);
         }
     }
 }
