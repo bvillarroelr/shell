@@ -22,9 +22,9 @@ Benjamín Villarroel Rubio
 2. cd 	"nombre/del/directorio" para moverse de directorio
 3. clear 	para limpiar el espacio de la shell 
 4. exit 	para salir de la shell y regresar a la terminal original del sistema operativo
-5. uso de pipes: "|"; permite ejecutar procesos de manera concurrente
+5. uso de pipes: "|"; permite comunicar procesos de manera entre sí. Toma la salida de uno y se la da a la entrada del otro para ejecutarlo.
 6. cd .. 	permite devolverse de directorio
-7. wc    	tambien se puede usar mediante un pipe
+7. wc    	muestra el número de líneas, palabras y caracteres de la entrada dada
 
 
 # Ejecución de comando personalizado favs:
