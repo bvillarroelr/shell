@@ -66,14 +66,16 @@ void favs_borrar() {
     printf("Todos los favoritos han sido borrados.\n");
 }
 
-void favs_ejecutar(int num) {
+std::string favs_ejecutar(int num) {
+    std::string cmd;
     for (int i = 0; i < fav_count; i++) {
         if (favorites[i].id == num) {
-            system(favorites[i].cmd);
-            return;
+            std::string cmd(favorites[i].cmd);
+            return cmd;
         }
     }
     printf("Comando favorito no encontrado.\n");
+    return cmd;
 }
 
 void favs_cargar() {
