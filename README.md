@@ -2,10 +2,10 @@
 Implementación de intérprete de comandos en linux para el curso de Sistemas Operativos 2024-2
 
 Colaboradores:
-Ricardo Charris Jimenez
-Vicente Ramírez Torrealba
-Juan Umaña Silva
-Benjamín Villarroel Rubio
+- Ricardo Charris Jimenez
+- Vicente Ramírez Torrealba
+- Juan Umaña Silva
+- Benjamín Villarroel Rubio
 
 # Instrucciones de compilación
 1.- Compilar el programa:
